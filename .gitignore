@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# crawler output & state
+crawler/output/
+crawler/state/
+crawler/logs/
+__pycache__/
+*.pyc

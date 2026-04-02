@@ -1,0 +1,47 @@
+name: EXIT Toys Crawler
+
+on:
+  schedule:
+    # Dagelijks om 04:00 UTC (06:00 Amsterdam)
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+jobs:
+  crawl-and-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: |
+          cd crawler
+          pip install -r requirements.txt
+
+      - name: Install Playwright browsers
+        run: playwright install chromium --with-deps
+
+      - name: Run crawler
+        run: |
+          cd crawler
+          python main.py --force
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Upload to Vercel Blob
+        env:
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+        run: node scripts/upload-to-blob.mjs
