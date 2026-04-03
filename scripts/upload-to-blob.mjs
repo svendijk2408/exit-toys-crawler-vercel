@@ -35,6 +35,7 @@ async function main() {
       access: "public",
       contentType: "application/json",
       addRandomSuffix: false,
+      allowOverwrite: true,
     });
     console.log(`  URL: ${blob.url}`);
 
@@ -77,6 +78,7 @@ async function main() {
       access: "public",
       contentType: "application/json",
       addRandomSuffix: false,
+      allowOverwrite: true,
     }
   );
   console.log(`Metadata URL: ${metaBlob.url}`);
