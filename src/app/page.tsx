@@ -13,9 +13,14 @@ interface KBMetadata {
   lastUpdated: string;
   entries: {
     total: number;
-    producten: number;
-    faqs: number;
-    paginas: number;
+    // Nieuw format
+    producten?: number;
+    faqs?: number;
+    paginas?: number;
+    // Oud format (backward compat)
+    products?: number;
+    blogs?: number;
+    pages?: number;
   };
   fileSizeBytes: number;
   fileSizeMB: string;
@@ -23,6 +28,16 @@ interface KBMetadata {
     producten: FileInfo;
     faqs: FileInfo;
     paginas: FileInfo;
+  };
+}
+
+/** Normaliseer entries naar nieuw format, ongeacht of metadata oud of nieuw is. */
+function normalizeEntries(entries: KBMetadata["entries"]) {
+  return {
+    total: entries.total,
+    producten: entries.producten ?? entries.products ?? 0,
+    faqs: entries.faqs ?? 0,
+    paginas: entries.paginas ?? ((entries.blogs ?? 0) + (entries.pages ?? 0)),
   };
 }
 
@@ -63,12 +78,17 @@ export default async function Dashboard() {
       {meta ? (
         <>
           {/* Stats grid */}
-          <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <StatCard label="Totaal entries" value={meta.entries.total} />
-            <StatCard label="Producten" value={meta.entries.producten} />
-            <StatCard label="FAQs" value={meta.entries.faqs} />
-            <StatCard label="Pagina&apos;s" value={meta.entries.paginas} />
-          </div>
+          {(() => {
+            const e = normalizeEntries(meta.entries);
+            return (
+              <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <StatCard label="Totaal entries" value={e.total} />
+                <StatCard label="Producten" value={e.producten} />
+                <StatCard label="FAQs" value={e.faqs} />
+                <StatCard label="Pagina&apos;s" value={e.paginas} />
+              </div>
+            );
+          })()}
 
           {/* Info cards */}
           <div className="mb-8 grid gap-4 sm:grid-cols-2">
