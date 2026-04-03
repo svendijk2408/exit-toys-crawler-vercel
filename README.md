@@ -64,9 +64,33 @@ Als je hier "Nog geen data beschikbaar" ziet, heeft de crawler nog niet gedraaid
 
 ## Handmatig een crawl starten
 
-Soms wil je de kennisbank direct bijwerken, bijvoorbeeld na een grote productwijziging op de website. Dit doe je zo:
+Soms wil je de kennisbank direct bijwerken, bijvoorbeeld na een grote productwijziging op de website. Dit kan op twee manieren:
 
-### Stap voor stap
+### Optie 1: Via het dashboard (aanbevolen)
+
+De makkelijkste manier — geen GitHub-account nodig.
+
+1. **Ga naar het dashboard:**
+   - Open https://exit-toys-crawler-vercel.vercel.app
+
+2. **Klik op "Handmatig crawlen":**
+   - Je vindt deze knop bovenaan het dashboard onder "Crawl starten"
+
+3. **Bevestig:**
+   - Er verschijnt een bevestigingsvraag: "Weet je het zeker?"
+   - Klik op **"Ja, start de crawl"** om te bevestigen, of op **"Annuleren"** om af te breken
+
+4. **Wacht tot het klaar is:**
+   - De crawl duurt 20–45 minuten
+   - Als er al een crawl draait, krijg je hier een melding van
+
+5. **Controleer het resultaat:**
+   - Ververs het dashboard na 20–45 minuten
+   - Controleer of de "Laatste update" is bijgewerkt
+
+### Optie 2: Via GitHub Actions
+
+Alternatief voor wie toegang heeft tot GitHub.
 
 1. **Ga naar GitHub Actions:**
    - Open https://github.com/svendijk2408/exit-toys-crawler-vercel/actions
@@ -89,9 +113,9 @@ Soms wil je de kennisbank direct bijwerken, bijvoorbeeld na een grote productwij
 
 ### Let op
 
-- **Start geen nieuwe crawl als er al een draait** - je kunt dit zien aan het gele bolletje bij de lopende run
-- De crawl duurt 20-45 minuten, dit is normaal
-- Als een crawl mislukt (rood kruisje), probeer het nog een keer. Lukt het daarna nog niet? Neem contact op met Sven
+- **Start geen nieuwe crawl als er al een draait** — het dashboard toont een melding als er een actieve crawl is
+- De crawl duurt 20–45 minuten, dit is normaal
+- Als een crawl mislukt, probeer het nog een keer. Lukt het daarna nog niet? Neem contact op met Sven
 
 ---
 
@@ -193,7 +217,9 @@ exit-toys-crawler-vercel/
 │   ├── config.py                   # Configuratie
 │   └── main.py                     # Startpunt
 ├── src/app/                        # Next.js frontend
-│   ├── api/knowledge-base/route.ts # API-endpoint
+│   ├── api/knowledge-base/route.ts # Kennisbank API-endpoint
+│   ├── api/trigger-crawl/route.ts  # Handmatig crawl triggeren (GitHub Actions)
+│   ├── components/                 # Client-side componenten
 │   └── page.tsx                    # Dashboard
 ├── scripts/upload-to-blob.mjs      # Upload script
 ├── vercel.json                     # Vercel configuratie
@@ -201,7 +227,8 @@ exit-toys-crawler-vercel/
 ```
 
 ### Environment variabelen
-- `BLOB_READ_WRITE_TOKEN` - Vercel Blob Storage token (opgeslagen in GitHub Secrets)
+- `BLOB_READ_WRITE_TOKEN` - Vercel Blob Storage token (opgeslagen in GitHub Secrets en Vercel)
+- `GITHUB_PAT` - GitHub Personal Access Token met `actions:write` en `contents:read` scope (opgeslagen in Vercel environment variables). Nodig voor de "Handmatig crawlen" knop op het dashboard.
 
 ### Rate limiting
 - Max 3 gelijktijdige requests naar exittoys.nl

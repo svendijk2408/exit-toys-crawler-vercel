@@ -1,4 +1,5 @@
 import { head } from "@vercel/blob";
+import TriggerCrawlButton from "./components/TriggerCrawlButton";
 
 const METADATA_FILENAME = "exittoys_metadata.json";
 
@@ -88,6 +89,18 @@ export default async function Dashboard() {
         <p className="mt-2 text-gray-600">
           Automatische crawler voor de CM Halo AI-chatbot kennisbank.
         </p>
+      </div>
+
+      {/* Handmatig crawlen */}
+      <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Crawl starten</h2>
+        </div>
+        <p className="mb-4 text-sm text-gray-500">
+          Start handmatig een crawl om de kennisbank direct bij te werken,
+          bijvoorbeeld na een productwijziging op de website.
+        </p>
+        <TriggerCrawlButton />
       </div>
 
       {meta ? (
