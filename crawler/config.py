@@ -20,6 +20,9 @@ else:
 
 # Output bestanden
 KNOWLEDGE_BASE_FILE = OUTPUT_DIR / "exittoys_knowledge_base.json"
+KB_PRODUCTEN_FILE = OUTPUT_DIR / "producten.json"
+KB_FAQS_FILE = OUTPUT_DIR / "faqs.json"
+KB_PAGINAS_FILE = OUTPUT_DIR / "paginas.json"
 KNOWLEDGE_BASE_COPY = None if IS_CI else Path.home() / "Downloads" / "exittoys_knowledge_base.json"
 
 # State bestanden

@@ -2,62 +2,71 @@
  * Upload crawler output naar Vercel Blob Storage.
  *
  * Verwacht dat BLOB_READ_WRITE_TOKEN als environment variable is gezet.
- * Leest de knowledge base JSON uit /tmp/crawler-output/.
+ * Leest de knowledge base JSON bestanden uit /tmp/crawler-output/.
  */
 
 import { put } from "@vercel/blob";
 import { readFileSync, statSync } from "fs";
 
 const OUTPUT_DIR = "/tmp/crawler-output";
-const KB_FILE = `${OUTPUT_DIR}/exittoys_knowledge_base.json`;
+
+const FILES = [
+  { name: "exittoys_knowledge_base.json", key: "combined" },
+  { name: "producten.json", key: "producten" },
+  { name: "faqs.json", key: "faqs" },
+  { name: "paginas.json", key: "paginas" },
+];
 
 async function main() {
-  // Lees de knowledge base
-  console.log(`Lezen: ${KB_FILE}`);
-  const kbData = readFileSync(KB_FILE, "utf-8");
-  const entries = JSON.parse(kbData);
-  const fileSizeBytes = statSync(KB_FILE).size;
+  const uploadResults = {};
 
-  // Tel entry-types
-  const stats = {
-    total: entries.length,
-    products: 0,
-    faqs: 0,
-    blogs: 0,
-    pages: 0,
-  };
+  for (const { name, key } of FILES) {
+    const filePath = `${OUTPUT_DIR}/${name}`;
+    console.log(`Lezen: ${filePath}`);
 
-  for (const entry of entries) {
-    const content = entry.content || "";
-    if (content.startsWith("Product:") || content.startsWith("Onderdeel:")) {
-      stats.products++;
-    } else if (content.startsWith("Vraag:")) {
-      stats.faqs++;
-    } else if (content.includes("Type: Blog")) {
-      stats.blogs++;
-    } else {
-      stats.pages++;
-    }
+    const data = readFileSync(filePath, "utf-8");
+    const entries = JSON.parse(data);
+    const sizeBytes = statSync(filePath).size;
+
+    console.log(`  ${name}: ${entries.length} entries, ${(sizeBytes / (1024 * 1024)).toFixed(2)} MB`);
+
+    console.log(`  Uploaden...`);
+    const blob = await put(name, data, {
+      access: "public",
+      contentType: "application/json",
+      addRandomSuffix: false,
+    });
+    console.log(`  URL: ${blob.url}`);
+
+    uploadResults[key] = {
+      entries: entries.length,
+      fileSizeBytes: sizeBytes,
+      fileSizeMB: (sizeBytes / (1024 * 1024)).toFixed(2),
+      blobUrl: blob.url,
+    };
   }
 
-  console.log(`Entries: ${stats.total} (${stats.products} producten, ${stats.faqs} FAQs, ${stats.blogs} blogs, ${stats.pages} pagina's)`);
-
-  // Upload knowledge base JSON
-  console.log("Uploaden: knowledge base JSON...");
-  const kbBlob = await put("exittoys_knowledge_base.json", kbData, {
-    access: "public",
-    contentType: "application/json",
-    addRandomSuffix: false,
-  });
-  console.log(`Knowledge base URL: ${kbBlob.url}`);
+  // Tel entry-types uit het gecombineerde bestand
+  const combinedPath = `${OUTPUT_DIR}/exittoys_knowledge_base.json`;
+  const combinedData = JSON.parse(readFileSync(combinedPath, "utf-8"));
 
   // Maak en upload metadata
   const metadata = {
     lastUpdated: new Date().toISOString(),
-    entries: stats,
-    fileSizeBytes,
-    fileSizeMB: (fileSizeBytes / (1024 * 1024)).toFixed(2),
-    blobUrl: kbBlob.url,
+    entries: {
+      total: combinedData.length,
+      producten: uploadResults.producten.entries,
+      faqs: uploadResults.faqs.entries,
+      paginas: uploadResults.paginas.entries,
+    },
+    fileSizeBytes: uploadResults.combined.fileSizeBytes,
+    fileSizeMB: uploadResults.combined.fileSizeMB,
+    blobUrl: uploadResults.combined.blobUrl,
+    files: {
+      producten: uploadResults.producten,
+      faqs: uploadResults.faqs,
+      paginas: uploadResults.paginas,
+    },
   };
 
   console.log("Uploaden: metadata JSON...");

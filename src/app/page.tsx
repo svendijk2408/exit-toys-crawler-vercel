@@ -2,17 +2,28 @@ import { head } from "@vercel/blob";
 
 const METADATA_FILENAME = "exittoys_metadata.json";
 
+interface FileInfo {
+  entries: number;
+  fileSizeBytes: number;
+  fileSizeMB: string;
+  blobUrl: string;
+}
+
 interface KBMetadata {
   lastUpdated: string;
   entries: {
     total: number;
-    products: number;
+    producten: number;
     faqs: number;
-    blogs: number;
-    pages: number;
+    paginas: number;
   };
   fileSizeBytes: number;
   fileSizeMB: string;
+  files?: {
+    producten: FileInfo;
+    faqs: FileInfo;
+    paginas: FileInfo;
+  };
 }
 
 async function getMetadata(): Promise<KBMetadata | null> {
@@ -52,12 +63,11 @@ export default async function Dashboard() {
       {meta ? (
         <>
           {/* Stats grid */}
-          <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <StatCard label="Totaal entries" value={meta.entries.total} />
-            <StatCard label="Producten" value={meta.entries.products} />
+            <StatCard label="Producten" value={meta.entries.producten} />
             <StatCard label="FAQs" value={meta.entries.faqs} />
-            <StatCard label="Blogs" value={meta.entries.blogs} />
-            <StatCard label="Pagina's" value={meta.entries.pages} />
+            <StatCard label="Pagina&apos;s" value={meta.entries.paginas} />
           </div>
 
           {/* Info cards */}
@@ -66,8 +76,35 @@ export default async function Dashboard() {
               label="Laatste update"
               value={formatDate(meta.lastUpdated)}
             />
-            <InfoCard label="Bestandsgrootte" value={`${meta.fileSizeMB} MB`} />
+            <InfoCard label="Totale grootte" value={`${meta.fileSizeMB} MB`} />
           </div>
+
+          {/* Per-bestand grootte */}
+          {meta.files && (
+            <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6">
+              <h2 className="mb-3 text-lg font-semibold">Bestanden</h2>
+              <div className="space-y-2 text-sm">
+                {[
+                  { label: "producten.json", info: meta.files.producten },
+                  { label: "faqs.json", info: meta.files.faqs },
+                  { label: "paginas.json", info: meta.files.paginas },
+                ].map(({ label, info }) => (
+                  <div
+                    key={label}
+                    className="flex items-center justify-between rounded-md bg-gray-50 px-4 py-2"
+                  >
+                    <code className="text-xs font-[family-name:var(--font-mono)]">
+                      {label}
+                    </code>
+                    <span className="text-gray-500">
+                      {info.entries.toLocaleString("nl-NL")} entries &middot;{" "}
+                      {info.fileSizeMB} MB
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <div className="mb-8 rounded-lg border border-yellow-200 bg-yellow-50 p-6">
@@ -81,16 +118,40 @@ export default async function Dashboard() {
         </div>
       )}
 
-      {/* API endpoint info */}
+      {/* API endpoints info */}
       <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="mb-3 text-lg font-semibold">API Endpoint</h2>
-        <div className="rounded-md bg-gray-900 p-4">
-          <code className="text-sm text-green-400 font-[family-name:var(--font-mono)]">
-            GET /api/knowledge-base
-          </code>
+        <h2 className="mb-3 text-lg font-semibold">API Endpoints</h2>
+        <div className="space-y-2">
+          {[
+            {
+              endpoint: "GET /api/knowledge-base",
+              desc: "Volledige kennisbank (alle entries)",
+            },
+            {
+              endpoint: "GET /api/knowledge-base/producten",
+              desc: "Alleen producten + onderdelen",
+            },
+            {
+              endpoint: "GET /api/knowledge-base/faqs",
+              desc: "Alleen veelgestelde vragen",
+            },
+            {
+              endpoint: "GET /api/knowledge-base/paginas",
+              desc: "Alleen pagina\u2019s + blogs",
+            },
+          ].map(({ endpoint, desc }) => (
+            <div key={endpoint}>
+              <div className="rounded-md bg-gray-900 px-4 py-2">
+                <code className="text-sm text-green-400 font-[family-name:var(--font-mono)]">
+                  {endpoint}
+                </code>
+              </div>
+              <p className="mt-1 mb-3 text-xs text-gray-500">{desc}</p>
+            </div>
+          ))}
         </div>
-        <p className="mt-3 text-sm text-gray-600">
-          Retourneert de volledige kennisbank als JSON array met{" "}
+        <p className="mt-2 text-sm text-gray-600">
+          Retourneert JSON arrays met{" "}
           <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-[family-name:var(--font-mono)]">
             trigger
           </code>{" "}
@@ -119,17 +180,17 @@ export default async function Dashboard() {
           <PipelineStep
             step={3}
             title="Kennisbank genereren"
-            description="Data wordt omgezet naar trigger/content format voor de AI-chatbot."
+            description="Data wordt omgezet naar trigger/content format en opgesplitst in 3 bestanden + 1 gecombineerd."
           />
           <PipelineStep
             step={4}
             title="Upload naar Blob Storage"
-            description="De JSON wordt geupload naar Vercel Blob Storage."
+            description="Alle JSON bestanden worden geupload naar Vercel Blob Storage."
           />
           <PipelineStep
             step={5}
             title="CM Halo sync"
-            description="CM Halo haalt de kennisbank op via /api/knowledge-base."
+            description="CM Halo haalt de kennisbank op via de individuele endpoints."
           />
         </ol>
       </div>

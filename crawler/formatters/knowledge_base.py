@@ -6,7 +6,13 @@ import json
 import logging
 import shutil
 
-from config import KNOWLEDGE_BASE_COPY, KNOWLEDGE_BASE_FILE
+from config import (
+    KB_FAQS_FILE,
+    KB_PAGINAS_FILE,
+    KB_PRODUCTEN_FILE,
+    KNOWLEDGE_BASE_COPY,
+    KNOWLEDGE_BASE_FILE,
+)
 from formatters.blog_formatter import BlogFormatter
 from formatters.faq_formatter import FAQFormatter
 from formatters.page_formatter import PageFormatter
@@ -24,23 +30,25 @@ class KnowledgeBaseGenerator:
         self.blog_fmt = BlogFormatter()
         self.page_fmt = PageFormatter()
 
-    def generate(self, results: dict) -> list[dict]:
-        """Genereer kennisbank entries uit alle resultaten.
+    def generate(self, results: dict) -> dict[str, list[dict]]:
+        """Genereer kennisbank entries uit alle resultaten, gecategoriseerd.
 
         Args:
             results: Dict met keys products, faqs, blogs, pages, parts
 
         Returns:
-            Lijst van trigger/content dicts
+            Dict met keys 'producten', 'faqs', 'paginas' — elk een lijst van entries
         """
-        entries = []
+        producten = []
+        faqs = []
+        paginas = []
 
         # Producten
         products = results.get("products", [])
         for product in products:
             try:
                 entry = self.product_fmt.format(product)
-                entries.append(entry)
+                producten.append(entry)
             except Exception as e:
                 logger.error(f"Product format fout: {e}")
 
@@ -49,19 +57,19 @@ class KnowledgeBaseGenerator:
         for part in parts:
             try:
                 entry = self.product_fmt.format(part)
-                entries.append(entry)
+                producten.append(entry)
             except Exception as e:
                 logger.error(f"Onderdeel format fout: {e}")
 
         # FAQs
-        faqs = results.get("faqs", [])
+        faq_items = results.get("faqs", [])
         seen_questions = set()
-        for faq in faqs:
+        for faq in faq_items:
             try:
                 q = faq.get("question", "")
                 if q not in seen_questions:
                     entry = self.faq_fmt.format(faq)
-                    entries.append(entry)
+                    faqs.append(entry)
                     seen_questions.add(q)
             except Exception as e:
                 logger.error(f"FAQ format fout: {e}")
@@ -71,7 +79,7 @@ class KnowledgeBaseGenerator:
         for blog in blogs:
             try:
                 entry = self.blog_fmt.format(blog)
-                entries.append(entry)
+                paginas.append(entry)
             except Exception as e:
                 logger.error(f"Blog format fout: {e}")
 
@@ -80,22 +88,44 @@ class KnowledgeBaseGenerator:
         for page in pages:
             try:
                 entry = self.page_fmt.format(page)
-                entries.append(entry)
+                paginas.append(entry)
             except Exception as e:
                 logger.error(f"Pagina format fout: {e}")
 
-        # Dedupliceer op basis van trigger
-        entries = self._deduplicate(entries)
+        # Dedupliceer per categorie
+        producten = self._deduplicate(producten)
+        faqs = self._deduplicate(faqs)
+        paginas = self._deduplicate(paginas)
 
-        logger.info(f"Kennisbank: {len(entries)} totale entries")
-        return entries
+        logger.info(
+            f"Kennisbank: {len(producten)} producten, "
+            f"{len(faqs)} FAQs, {len(paginas)} pagina's — "
+            f"{len(producten) + len(faqs) + len(paginas)} totaal"
+        )
 
-    def save(self, entries: list[dict]):
-        """Sla de kennisbank op als JSON."""
-        # Hoofd output
+        return {"producten": producten, "faqs": faqs, "paginas": paginas}
+
+    def save(self, categorized: dict[str, list[dict]]):
+        """Sla de kennisbank op als 4 JSON-bestanden (3 splits + 1 gecombineerd)."""
+        producten = categorized["producten"]
+        faqs = categorized["faqs"]
+        paginas = categorized["paginas"]
+        combined = producten + faqs + paginas
+
+        # Schrijf split bestanden
+        for path, entries, label in [
+            (KB_PRODUCTEN_FILE, producten, "producten"),
+            (KB_FAQS_FILE, faqs, "faqs"),
+            (KB_PAGINAS_FILE, paginas, "paginas"),
+        ]:
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(entries, f, ensure_ascii=False, indent=2)
+            logger.info(f"Opgeslagen: {path} ({len(entries)} {label})")
+
+        # Gecombineerd bestand (backward compatibility)
         with open(KNOWLEDGE_BASE_FILE, "w", encoding="utf-8") as f:
-            json.dump(entries, f, ensure_ascii=False, indent=2)
-        logger.info(f"Opgeslagen: {KNOWLEDGE_BASE_FILE} ({len(entries)} entries)")
+            json.dump(combined, f, ensure_ascii=False, indent=2)
+        logger.info(f"Opgeslagen: {KNOWLEDGE_BASE_FILE} ({len(combined)} entries)")
 
         # Kopie naar Downloads (overslaan in CI-modus)
         if KNOWLEDGE_BASE_COPY is not None:
