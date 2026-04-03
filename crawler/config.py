@@ -25,6 +25,25 @@ KB_FAQS_FILE = OUTPUT_DIR / "faqs.json"
 KB_PAGINAS_FILE = OUTPUT_DIR / "paginas.json"
 KNOWLEDGE_BASE_COPY = None if IS_CI else Path.home() / "Downloads" / "exittoys_knowledge_base.json"
 
+# Product categorieën: slug → zoekwoorden (case-insensitive match op trigger+content)
+PRODUCT_CATEGORIES = {
+    "trampolines": ["trampoline"],
+    "zwembaden": ["zwembad", "pool"],
+    "speelhuisjes": ["speelhuis"],
+    "sport": ["sport", "voetbal", "rebounder", "fitness"],
+    "getset": ["getset", "speel- en sporttoestel"],
+    "zandbak": ["zandbak"],
+    "schommel": ["schommel"],
+    "onderdelen": ["onderdeel"],
+    "overig": [],  # catch-all
+}
+
+# Per-categorie output bestanden
+KB_PRODUCTEN_CATEGORY_FILES = {
+    slug: OUTPUT_DIR / f"producten-{slug}.json"
+    for slug in PRODUCT_CATEGORIES
+}
+
 # State bestanden
 STATE_FILE = STATE_DIR / "state.json"
 

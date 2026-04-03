@@ -106,7 +106,15 @@ class ProductFormatter:
 
         content = "\n".join(content_parts)
 
-        return {"trigger": trigger, "content": content}
+        entry = {"trigger": trigger, "content": content}
+
+        # Categorie meegeven zodat knowledge_base.py hierop kan groeperen
+        if product.get("type") == "onderdeel":
+            entry["category"] = "onderdelen"
+        elif category:
+            entry["category"] = category.lower()
+
+        return entry
 
     def _get_spec_value(self, product: dict, key: str) -> str:
         """Zoek een specifieke spec waarde."""

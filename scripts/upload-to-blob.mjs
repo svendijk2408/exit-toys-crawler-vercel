@@ -10,11 +10,27 @@ import { readFileSync, statSync } from "fs";
 
 const OUTPUT_DIR = "/tmp/crawler-output";
 
+const CATEGORY_SLUGS = [
+  "trampolines",
+  "zwembaden",
+  "speelhuisjes",
+  "sport",
+  "getset",
+  "zandbak",
+  "schommel",
+  "onderdelen",
+  "overig",
+];
+
 const FILES = [
   { name: "exittoys_knowledge_base.json", key: "combined" },
   { name: "producten.json", key: "producten" },
   { name: "faqs.json", key: "faqs" },
   { name: "paginas.json", key: "paginas" },
+  ...CATEGORY_SLUGS.map((slug) => ({
+    name: `producten-${slug}.json`,
+    key: `producten-${slug}`,
+  })),
 ];
 
 async function main() {
@@ -51,6 +67,15 @@ async function main() {
   const combinedPath = `${OUTPUT_DIR}/exittoys_knowledge_base.json`;
   const combinedData = JSON.parse(readFileSync(combinedPath, "utf-8"));
 
+  // Bouw categoryFiles object uit upload results
+  const categoryFiles = {};
+  for (const slug of CATEGORY_SLUGS) {
+    const key = `producten-${slug}`;
+    if (uploadResults[key]) {
+      categoryFiles[slug] = uploadResults[key];
+    }
+  }
+
   // Maak en upload metadata
   const metadata = {
     lastUpdated: new Date().toISOString(),
@@ -68,6 +93,7 @@ async function main() {
       faqs: uploadResults.faqs,
       paginas: uploadResults.paginas,
     },
+    categoryFiles,
   };
 
   console.log("Uploaden: metadata JSON...");

@@ -10,8 +10,10 @@ from config import (
     KB_FAQS_FILE,
     KB_PAGINAS_FILE,
     KB_PRODUCTEN_FILE,
+    KB_PRODUCTEN_CATEGORY_FILES,
     KNOWLEDGE_BASE_COPY,
     KNOWLEDGE_BASE_FILE,
+    PRODUCT_CATEGORIES,
 )
 from formatters.blog_formatter import BlogFormatter
 from formatters.faq_formatter import FAQFormatter
@@ -105,22 +107,59 @@ class KnowledgeBaseGenerator:
 
         return {"producten": producten, "faqs": faqs, "paginas": paginas}
 
+    def _categorize_product(self, entry: dict) -> str:
+        """Bepaal de categorie-slug voor een product entry."""
+        # Gebruik het category veld dat de formatter heeft meegegeven
+        cat = entry.get("category", "")
+        text = f"{entry.get('trigger', '')} {entry.get('content', '')}".lower()
+
+        for slug, keywords in PRODUCT_CATEGORIES.items():
+            if slug == "overig":
+                continue
+            # Directe match op formatter-category
+            if cat and any(kw in cat for kw in keywords):
+                return slug
+            # Fallback: zoekwoorden in trigger+content
+            if any(kw in text for kw in keywords):
+                return slug
+
+        return "overig"
+
     def save(self, categorized: dict[str, list[dict]]):
-        """Sla de kennisbank op als 4 JSON-bestanden (3 splits + 1 gecombineerd)."""
+        """Sla de kennisbank op als JSON-bestanden (splits + per categorie + gecombineerd)."""
         producten = categorized["producten"]
         faqs = categorized["faqs"]
         paginas = categorized["paginas"]
-        combined = producten + faqs + paginas
+
+        # Strip category veld voor output (HALO verwacht alleen trigger/content)
+        def strip_category(entries: list[dict]) -> list[dict]:
+            return [{k: v for k, v in e.items() if k != "category"} for e in entries]
+
+        producten_clean = strip_category(producten)
+        combined = producten_clean + faqs + paginas
 
         # Schrijf split bestanden
         for path, entries, label in [
-            (KB_PRODUCTEN_FILE, producten, "producten"),
+            (KB_PRODUCTEN_FILE, producten_clean, "producten"),
             (KB_FAQS_FILE, faqs, "faqs"),
             (KB_PAGINAS_FILE, paginas, "paginas"),
         ]:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(entries, f, ensure_ascii=False, indent=2)
             logger.info(f"Opgeslagen: {path} ({len(entries)} {label})")
+
+        # Per-categorie bestanden
+        categorized_products: dict[str, list[dict]] = {slug: [] for slug in PRODUCT_CATEGORIES}
+        for entry in producten:
+            slug = self._categorize_product(entry)
+            categorized_products[slug].append(entry)
+
+        for slug, entries in categorized_products.items():
+            path = KB_PRODUCTEN_CATEGORY_FILES[slug]
+            clean_entries = strip_category(entries)
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(clean_entries, f, ensure_ascii=False, indent=2)
+            logger.info(f"Opgeslagen: {path} ({len(clean_entries)} {slug})")
 
         # Gecombineerd bestand (backward compatibility)
         with open(KNOWLEDGE_BASE_FILE, "w", encoding="utf-8") as f:
