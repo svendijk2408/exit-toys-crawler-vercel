@@ -101,6 +101,25 @@ export default async function Dashboard() {
           bijvoorbeeld na een productwijziging op de website.
         </p>
         <TriggerCrawlButton />
+
+        {/* Robin sync reminder */}
+        <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-4">
+          <div className="flex gap-3">
+            <span className="mt-0.5 text-amber-600 text-lg leading-none">&#9888;</span>
+            <div>
+              <p className="text-sm font-semibold text-amber-800">
+                Vergeet niet: Robin synchroniseren na een handmatige crawl
+              </p>
+              <p className="mt-1 text-sm text-amber-700">
+                Na een handmatige crawl moet je ook in <strong>Robin</strong> de kennisbank synchroniseren,
+                anders gebruikt de chatbot nog de oude data. Ga naar{" "}
+                <strong>Robin &gt; Knowledge</strong> en klik rechtsboven op de{" "}
+                <strong>&ldquo;Sync&rdquo;</strong>-knop. Bij de dagelijkse automatische crawl (06:00)
+                gebeurt dit automatisch.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {meta ? (
@@ -282,6 +301,11 @@ export default async function Dashboard() {
             step={5}
             title="CM Halo sync"
             description="CM Halo haalt de kennisbank op via de individuele endpoints."
+          />
+          <PipelineStep
+            step={6}
+            title="Robin synchroniseren"
+            description="Bij een handmatige crawl: ga naar Robin > Knowledge en klik op 'Sync'. Bij de dagelijkse crawl gebeurt dit automatisch."
           />
         </ol>
       </div>

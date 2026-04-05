@@ -111,10 +111,28 @@ Alternatief voor wie toegang heeft tot GitHub.
    - Ga naar het dashboard: https://exit-toys-crawler-vercel.vercel.app
    - Controleer of de "Laatste update" is bijgewerkt
 
+### Stap 2: Robin synchroniseren (verplicht na handmatige crawl)
+
+Na elke handmatige crawl moet je ook **handmatig een sync triggeren in Robin**, zodat de chatbot de nieuwe data daadwerkelijk ophaalt.
+
+1. **Ga naar Robin:**
+   - Open het Robin-dashboard en navigeer naar **Knowledge**
+
+2. **Klik op "Sync":**
+   - Rechtsboven op de Knowledge-pagina staat een **"Sync"**-knop
+   - Klik hierop om Robin de nieuwe kennisbank te laten ophalen
+
+3. **Wacht op bevestiging:**
+   - Bovenaan verschijnt een melding: *"Synchronisation requested on … by CM.com - Automatic Synchronisation successful"*
+   - De status van de API Connections verandert naar **Synced**
+
+> **Waarom is dit nodig?** Bij de dagelijkse automatische crawl (06:00) synchroniseert Robin automatisch. Maar bij een handmatige crawl moet je de sync zelf triggeren, anders gebruikt de chatbot nog de oude data.
+
 ### Let op
 
 - **Start geen nieuwe crawl als er al een draait** — het dashboard toont een melding als er een actieve crawl is
 - De crawl duurt 20–45 minuten, dit is normaal
+- **Vergeet niet de Robin sync!** Na een handmatige crawl moet je altijd ook in Robin op "Sync" klikken
 - Als een crawl mislukt, probeer het nog een keer. Lukt het daarna nog niet? Neem contact op met Sven
 
 ---
