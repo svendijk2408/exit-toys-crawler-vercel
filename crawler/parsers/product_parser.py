@@ -14,6 +14,10 @@ logger = logging.getLogger(__name__)
 class ProductParser:
     """Parst productpagina's en extraheert alle relevante data."""
 
+    def __init__(self, in_stock_text: str = "Op voorraad", out_of_stock_text: str = "Niet op voorraad"):
+        self.in_stock_text = in_stock_text
+        self.out_of_stock_text = out_of_stock_text
+
     def parse(self, url: str, html: str) -> dict | None:
         """Parse een productpagina en retourneer gestructureerde data."""
         soup = BeautifulSoup(html, "lxml")
@@ -43,7 +47,7 @@ class ProductParser:
             offers = jsonld.get("offers", {})
             data["price"] = offers.get("price", "")
             data["currency"] = offers.get("priceCurrency", "EUR")
-            data["availability"] = "Op voorraad" if "InStock" in offers.get("availability", "") else "Niet op voorraad"
+            data["availability"] = self.in_stock_text if "InStock" in offers.get("availability", "") else self.out_of_stock_text
         else:
             # Fallback naar HTML data-attributen
             data["name"] = product_div.get("data-name", "")

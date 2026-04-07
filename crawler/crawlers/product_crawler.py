@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from config import BATCH_SIZE
+from config import BATCH_SIZE, LOCALE_CONFIG
 from crawlers.base import BaseCrawler
 from parsers.product_parser import ProductParser
 from utils.progress import ProgressTracker
@@ -19,7 +19,10 @@ class ProductCrawler:
     def __init__(self, crawler: BaseCrawler, state: CrawlState):
         self.crawler = crawler
         self.state = state
-        self.parser = ProductParser()
+        self.parser = ProductParser(
+            in_stock_text=LOCALE_CONFIG.in_stock_text,
+            out_of_stock_text=LOCALE_CONFIG.out_of_stock_text,
+        )
 
     async def crawl_all(self, urls: list[str]) -> list[dict]:
         """Crawl alle product-URLs en retourneer parsed data."""

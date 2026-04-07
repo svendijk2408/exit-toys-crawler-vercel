@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 class PageParser:
     """Parst info- en categoriepagina's."""
 
+    def __init__(self, skip_words: tuple[str, ...] = ("zoeken", "search", "winkelwagen")):
+        self.skip_words = skip_words
+
     def parse(self, url: str, html: str) -> dict | None:
         """Parse een pagina en retourneer gestructureerde data."""
         soup = BeautifulSoup(html, "lxml")
@@ -28,7 +31,7 @@ class PageParser:
             title = h1.get_text(strip=True)
 
         # Skip lege titels of zoekpagina's
-        if not title or title.lower() in ("zoeken", "search", "winkelwagen"):
+        if not title or title.lower() in self.skip_words:
             return None
 
         # Content extractie

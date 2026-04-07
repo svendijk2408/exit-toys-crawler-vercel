@@ -2,15 +2,22 @@
  * Upload crawler output naar Vercel Blob Storage.
  *
  * Verwacht dat BLOB_READ_WRITE_TOKEN als environment variable is gezet.
- * Leest de knowledge base JSON bestanden uit /tmp/crawler-output/.
+ * Leest de knowledge base JSON bestanden uit /tmp/crawler-output-{locale}/.
+ *
+ * Ondersteunt CRAWLER_LOCALE env var (default: "nl").
+ * - NL: upload als producten.json, faqs.json, etc. (ongewijzigd)
+ * - DE: upload met de/ prefix: de/producten.json, de/faqs.json, etc.
  */
 
 import { put } from "@vercel/blob";
 import { readFileSync, statSync } from "fs";
 
-const OUTPUT_DIR = "/tmp/crawler-output";
+const LOCALE = process.env.CRAWLER_LOCALE || "nl";
+const OUTPUT_DIR = `/tmp/crawler-output-${LOCALE}`;
+const BLOB_PREFIX = LOCALE === "nl" ? "" : `${LOCALE}/`;
 
-const CATEGORY_SLUGS = [
+// Categorie slugs per locale
+const CATEGORY_SLUGS_NL = [
   "trampolines",
   "zwembaden",
   "speelhuisjes",
@@ -21,6 +28,20 @@ const CATEGORY_SLUGS = [
   "onderdelen",
   "overig",
 ];
+
+const CATEGORY_SLUGS_DE = [
+  "trampoline",
+  "pools",
+  "spielgerate",
+  "sport",
+  "getset",
+  "sandkasten",
+  "schaukel",
+  "ersatzteile",
+  "overig",
+];
+
+const CATEGORY_SLUGS = LOCALE === "de" ? CATEGORY_SLUGS_DE : CATEGORY_SLUGS_NL;
 
 const FILES = [
   { name: "exittoys_knowledge_base.json", key: "combined" },
@@ -34,6 +55,10 @@ const FILES = [
 ];
 
 async function main() {
+  console.log(`Upload starten voor locale: ${LOCALE}`);
+  console.log(`Output dir: ${OUTPUT_DIR}`);
+  console.log(`Blob prefix: "${BLOB_PREFIX || "(geen)"}"`);
+
   const uploadResults = {};
 
   for (const { name, key } of FILES) {
@@ -46,8 +71,9 @@ async function main() {
 
     console.log(`  ${name}: ${entries.length} entries, ${(sizeBytes / (1024 * 1024)).toFixed(2)} MB`);
 
-    console.log(`  Uploaden...`);
-    const blob = await put(name, data, {
+    const blobKey = `${BLOB_PREFIX}${name}`;
+    console.log(`  Uploaden als: ${blobKey}`);
+    const blob = await put(blobKey, data, {
       access: "public",
       contentType: "application/json",
       addRandomSuffix: false,
@@ -78,6 +104,7 @@ async function main() {
 
   // Maak en upload metadata
   const metadata = {
+    locale: LOCALE,
     lastUpdated: new Date().toISOString(),
     entries: {
       total: combinedData.length,
@@ -94,11 +121,13 @@ async function main() {
       paginas: uploadResults.paginas,
     },
     categoryFiles,
+    categorySlugs: CATEGORY_SLUGS,
   };
 
-  console.log("Uploaden: metadata JSON...");
+  const metaBlobKey = `${BLOB_PREFIX}exittoys_metadata.json`;
+  console.log(`Uploaden: ${metaBlobKey}`);
   const metaBlob = await put(
-    "exittoys_metadata.json",
+    metaBlobKey,
     JSON.stringify(metadata, null, 2),
     {
       access: "public",
@@ -109,7 +138,7 @@ async function main() {
   );
   console.log(`Metadata URL: ${metaBlob.url}`);
 
-  console.log("Upload voltooid!");
+  console.log(`Upload voltooid voor locale: ${LOCALE}!`);
 }
 
 main().catch((err) => {

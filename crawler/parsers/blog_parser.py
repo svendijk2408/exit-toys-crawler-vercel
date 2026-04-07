@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 class BlogParser:
     """Parst blogpagina's en extraheert de content."""
 
+    def __init__(self, written_by_prefix: str = "Geschreven door:"):
+        self.written_by_prefix = written_by_prefix
+
     def parse(self, url: str, html: str) -> dict | None:
         """Parse een blogpost pagina en retourneer gestructureerde data."""
         soup = BeautifulSoup(html, "lxml")
@@ -45,8 +48,9 @@ class BlogParser:
         person_elem = editor.select_one(".written .person")
         if person_elem:
             author_text = person_elem.get_text(strip=True)
-            # Verwijder "Geschreven door:" prefix
-            author = re.sub(r"^Geschreven door:\s*", "", author_text).strip()
+            # Verwijder "Geschreven door:" / "Geschrieben von:" prefix
+            prefix_pattern = re.escape(self.written_by_prefix)
+            author = re.sub(rf"^{prefix_pattern}\s*", "", author_text).strip()
 
         # Content
         content = self._extract_content(editor)

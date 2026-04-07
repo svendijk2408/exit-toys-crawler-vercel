@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from config import BASE_URL, BATCH_SIZE, BLOG_INDEX_URL
+from config import BASE_URL, BATCH_SIZE, BLOG_INDEX_URL, LOCALE_CONFIG
 from crawlers.base import BaseCrawler
 from parsers.blog_parser import BlogParser
 from utils.progress import ProgressTracker
@@ -19,7 +19,9 @@ class BlogCrawler:
     def __init__(self, crawler: BaseCrawler, state: CrawlState):
         self.crawler = crawler
         self.state = state
-        self.parser = BlogParser()
+        self.parser = BlogParser(
+            written_by_prefix=LOCALE_CONFIG.written_by_prefix,
+        )
 
     async def discover_blog_urls(self, sitemap_urls: list[str]) -> list[str]:
         """Ontdek alle blog URLs.

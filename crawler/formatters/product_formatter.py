@@ -4,6 +4,9 @@
 class ProductFormatter:
     """Formatteert productdata naar kennisbank entries."""
 
+    def __init__(self, labels: dict[str, str]):
+        self.labels = labels
+
     def format(self, product: dict) -> dict:
         """Converteer een product dict naar trigger/content entry."""
         name = product.get("name", "")
@@ -24,9 +27,9 @@ class ProductFormatter:
             trigger_parts.append(sku)
 
         # Gewicht toevoegen als het er is
-        weight = self._get_spec_value(product, "Gewicht")
+        weight = self._get_spec_value(product, self.labels["weight"])
         if weight:
-            trigger_parts.append(f"Gewicht {weight}")
+            trigger_parts.append(f"{self.labels['weight']} {weight}")
 
         trigger = " ".join(trigger_parts)
 
@@ -45,47 +48,47 @@ class ProductFormatter:
         content_parts.append(f"Product: {name}")
 
         if price_formatted:
-            content_parts.append(f"Prijs: €{price_formatted}")
+            content_parts.append(f"{self.labels['price']}: \u20ac{price_formatted}")
         if sku:
-            content_parts.append(f"Artikelnummer: {sku}")
+            content_parts.append(f"{self.labels['sku']}: {sku}")
         if category:
-            content_parts.append(f"Categorie: {category}")
+            content_parts.append(f"{self.labels['category']}: {category}")
         if model:
-            content_parts.append(f"Serie: {model}")
+            content_parts.append(f"{self.labels['series']}: {model}")
 
         # Type uit specificaties
-        product_type = self._get_spec_value(product, "Type")
+        product_type = self._get_spec_value(product, self.labels["type"])
         if product_type:
-            content_parts.append(f"Type: {product_type}")
+            content_parts.append(f"{self.labels['type']}: {product_type}")
         elif product.get("type") == "onderdeel":
-            content_parts.append("Type: Onderdeel")
+            content_parts.append(f"{self.labels['type']}: {self.labels['type_part']}")
 
         if size:
-            content_parts.append(f"Afmetingen: {size}")
+            content_parts.append(f"{self.labels['dimensions']}: {size}")
 
         # Kleur
-        color = product.get("color", "") or self._get_spec_value(product, "Kleur")
+        color = product.get("color", "") or self._get_spec_value(product, self.labels["color_spec_key"])
         if color:
-            content_parts.append(f"Kleur: {color}")
+            content_parts.append(f"{self.labels['color']}: {color}")
 
         content_parts.append(f"URL: {product.get('url', '')}")
 
         # Beschrijving
         desc = product.get("description", "")
         if desc:
-            content_parts.append(f"\nBeschrijving:\n{desc}")
+            content_parts.append(f"\n{self.labels['description']}:\n{desc}")
 
         # USPs
         usps = product.get("usps", [])
         if usps:
-            content_parts.append("\nKenmerken:")
+            content_parts.append(f"\n{self.labels['features']}:")
             for usp in usps:
                 content_parts.append(f"- {usp}")
 
         # Specificaties
         specs = product.get("specifications", [])
         if specs:
-            content_parts.append("\nSpecificaties:")
+            content_parts.append(f"\n{self.labels['specifications']}:")
             for group in specs:
                 content_parts.append(f"[{group['group']}]")
                 for spec in group["specs"]:
@@ -99,10 +102,10 @@ class ProductFormatter:
         # On-page FAQs
         faqs = product.get("faqs", [])
         if faqs:
-            content_parts.append("\nVeelgestelde vragen:")
+            content_parts.append(f"\n{self.labels['faq']}:")
             for faq in faqs:
-                content_parts.append(f"V: {faq['question']}")
-                content_parts.append(f"A: {faq['answer']}")
+                content_parts.append(f"{self.labels['q']}: {faq['question']}")
+                content_parts.append(f"{self.labels['a']}: {faq['answer']}")
 
         content = "\n".join(content_parts)
 

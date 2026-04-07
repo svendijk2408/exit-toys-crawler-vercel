@@ -9,7 +9,7 @@ on:
 jobs:
   crawl-and-upload:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
 
     steps:
       - name: Checkout repository
@@ -28,11 +28,6 @@ jobs:
       - name: Install Playwright browsers
         run: playwright install chromium --with-deps
 
-      - name: Run crawler
-        run: |
-          cd crawler
-          python main.py --force
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -41,7 +36,26 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
-      - name: Upload to Vercel Blob
+      # === NL Crawl (exittoys.nl) ===
+      - name: Run crawler (NL)
+        run: |
+          cd crawler
+          python main.py --force --locale nl
+
+      - name: Upload to Vercel Blob (NL)
         env:
           BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+          CRAWLER_LOCALE: nl
+        run: node scripts/upload-to-blob.mjs
+
+      # === DE Crawl (exittoys.de) ===
+      - name: Run crawler (DE)
+        run: |
+          cd crawler
+          python main.py --force --locale de
+
+      - name: Upload to Vercel Blob (DE)
+        env:
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+          CRAWLER_LOCALE: de
         run: node scripts/upload-to-blob.mjs

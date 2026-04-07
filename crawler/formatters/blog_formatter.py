@@ -4,6 +4,10 @@
 class BlogFormatter:
     """Formatteert blog data naar kennisbank entries."""
 
+    def __init__(self, labels: dict[str, str], blog_categories: dict[str, str]):
+        self.labels = labels
+        self.categories = blog_categories
+
     def format(self, blog: dict) -> dict:
         """Converteer een blog dict naar trigger/content entry."""
         title = blog.get("title", "")
@@ -16,20 +20,7 @@ class BlogFormatter:
 
         # Voeg categorie-gerelateerde woorden toe
         title_lower = title.lower()
-        categories = {
-            "trampoline": "trampolines",
-            "zwembad": "zwembaden",
-            "speelhuis": "speelhuisjes",
-            "spa": "spa's",
-            "voetbal": "sport",
-            "basketbal": "sport",
-            "skelter": "skelters",
-            "zandbak": "zandbakken",
-            "schommel": "schommels",
-            "getset": "getset",
-            "fitness": "fitness",
-        }
-        for keyword, category in categories.items():
+        for keyword, category in self.categories.items():
             if keyword in title_lower:
                 trigger_parts.append(category)
                 break
@@ -39,9 +30,9 @@ class BlogFormatter:
         # Content: volledige blogpost
         content_parts = [title]
         if author:
-            content_parts.append(f"Auteur: {author}")
+            content_parts.append(f"{self.labels['author']}: {author}")
         if date:
-            content_parts.append(f"Datum: {date}")
+            content_parts.append(f"{self.labels['date']}: {date}")
         content_parts.append(f"URL: {blog.get('url', '')}")
         content_parts.append("")
         content_parts.append(content_text)

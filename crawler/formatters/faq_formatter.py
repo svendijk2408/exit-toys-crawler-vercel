@@ -4,6 +4,9 @@
 class FAQFormatter:
     """Formatteert FAQ data naar kennisbank entries."""
 
+    def __init__(self, labels: dict[str, str]):
+        self.labels = labels
+
     def format(self, faq: dict) -> dict:
         """Converteer een FAQ dict naar trigger/content entry."""
         question = faq.get("question", "")
@@ -21,6 +24,6 @@ class FAQFormatter:
         trigger = " ".join(trigger_parts)
 
         # Content: vraag + antwoord
-        content = f"Vraag: {question}\n\nAntwoord: {answer}"
+        content = f"{self.labels['question']}: {question}\n\n{self.labels['answer']}: {answer}"
 
         return {"trigger": trigger, "content": content}

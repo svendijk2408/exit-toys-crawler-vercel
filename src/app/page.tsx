@@ -1,8 +1,6 @@
 import { head } from "@vercel/blob";
 import TriggerCrawlButton from "./components/TriggerCrawlButton";
 
-const METADATA_FILENAME = "exittoys_metadata.json";
-
 interface FileInfo {
   entries: number;
   fileSizeBytes: number;
@@ -11,14 +9,13 @@ interface FileInfo {
 }
 
 interface KBMetadata {
+  locale?: string;
   lastUpdated: string;
   entries: {
     total: number;
-    // Nieuw format
     producten?: number;
     faqs?: number;
     paginas?: number;
-    // Oud format (backward compat)
     products?: number;
     blogs?: number;
     pages?: number;
@@ -31,11 +28,12 @@ interface KBMetadata {
     paginas: FileInfo;
   };
   categoryFiles?: Record<string, FileInfo>;
+  categorySlugs?: string[];
 }
 
 const BASE_URL = "https://exit-toys-crawler-vercel.vercel.app";
 
-const CATEGORY_LABELS: Record<string, string> = {
+const CATEGORY_LABELS_NL: Record<string, string> = {
   trampolines: "Trampolines",
   zwembaden: "Zwembaden",
   speelhuisjes: "Speelhuisjes",
@@ -47,7 +45,18 @@ const CATEGORY_LABELS: Record<string, string> = {
   overig: "Overig",
 };
 
-/** Normaliseer entries naar nieuw format, ongeacht of metadata oud of nieuw is. */
+const CATEGORY_LABELS_DE: Record<string, string> = {
+  trampoline: "Trampoline",
+  pools: "Pools",
+  spielgerate: "Spielgeräte",
+  sport: "Sport",
+  getset: "GetSet",
+  sandkasten: "Sandkasten",
+  schaukel: "Schaukel",
+  ersatzteile: "Ersatzteile",
+  overig: "Sonstige",
+};
+
 function normalizeEntries(entries: KBMetadata["entries"]) {
   return {
     total: entries.total,
@@ -57,9 +66,9 @@ function normalizeEntries(entries: KBMetadata["entries"]) {
   };
 }
 
-async function getMetadata(): Promise<KBMetadata | null> {
+async function getMetadata(blobKey: string): Promise<KBMetadata | null> {
   try {
-    const blobMeta = await head(METADATA_FILENAME);
+    const blobMeta = await head(blobKey);
     const response = await fetch(blobMeta.url, { next: { revalidate: 300 } });
     if (!response.ok) return null;
     return response.json();
@@ -77,7 +86,8 @@ function formatDate(iso: string): string {
 }
 
 export default async function Dashboard() {
-  const meta = await getMetadata();
+  const metaNL = await getMetadata("exittoys_metadata.json");
+  const metaDE = await getMetadata("de/exittoys_metadata.json");
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-12 font-[family-name:var(--font-sans)]">
@@ -87,7 +97,7 @@ export default async function Dashboard() {
           EXIT Toys Kennisbank
         </h1>
         <p className="mt-2 text-gray-600">
-          Automatische crawler voor de CM Halo AI-chatbot kennisbank.
+          Automatische crawler voor de CM Halo AI-chatbot kennisbank (NL + DE).
         </p>
       </div>
 
@@ -97,8 +107,8 @@ export default async function Dashboard() {
           <h2 className="text-lg font-semibold">Crawl starten</h2>
         </div>
         <p className="mb-4 text-sm text-gray-500">
-          Start handmatig een crawl om de kennisbank direct bij te werken,
-          bijvoorbeeld na een productwijziging op de website.
+          Start handmatig een crawl om de kennisbank direct bij te werken.
+          Dit crawlt zowel exittoys.nl als exittoys.de.
         </p>
         <TriggerCrawlButton />
 
@@ -111,10 +121,9 @@ export default async function Dashboard() {
                 Vergeet niet: Robin synchroniseren na een handmatige crawl
               </p>
               <p className="mt-1 text-sm text-amber-700">
-                Na een handmatige crawl moet je ook in <strong>Robin</strong> de kennisbank synchroniseren,
-                anders gebruikt de chatbot nog de oude data. Ga naar{" "}
-                <strong>Robin &gt; Knowledge</strong> en klik rechtsboven op de{" "}
-                <strong>&ldquo;Sync&rdquo;</strong>-knop. Bij de dagelijkse automatische crawl (06:00)
+                Na een handmatige crawl moet je ook in <strong>Robin</strong> de kennisbank synchroniseren.
+                Ga naar <strong>Robin &gt; Knowledge</strong> en klik op de{" "}
+                <strong>&ldquo;Sync&rdquo;</strong>-knop. Bij de dagelijkse crawl (06:00)
                 gebeurt dit automatisch.
               </p>
             </div>
@@ -122,13 +131,94 @@ export default async function Dashboard() {
         </div>
       </div>
 
+      {/* NL Sectie */}
+      <LocaleSection
+        locale="NL"
+        flag="🇳🇱"
+        site="exittoys.nl"
+        meta={metaNL}
+        apiPrefix="/api/knowledge-base"
+        categoryLabels={CATEGORY_LABELS_NL}
+      />
+
+      {/* DE Sectie */}
+      <LocaleSection
+        locale="DE"
+        flag="🇩🇪"
+        site="exittoys.de"
+        meta={metaDE}
+        apiPrefix="/api/de/knowledge-base"
+        categoryLabels={CATEGORY_LABELS_DE}
+      />
+
+      {/* Pipeline uitleg */}
+      <div className="rounded-lg border border-gray-200 bg-white p-6">
+        <h2 className="mb-4 text-lg font-semibold">Crawl Pipeline</h2>
+        <ol className="space-y-3 text-sm text-gray-700">
+          <PipelineStep
+            step={1}
+            title="GitHub Actions"
+            description="Dagelijks om 06:00 NL start de crawler automatisch."
+          />
+          <PipelineStep
+            step={2}
+            title="Website crawlen"
+            description="Python crawler haalt alle producten, FAQs, blogs en pagina's op van exittoys.nl en exittoys.de."
+          />
+          <PipelineStep
+            step={3}
+            title="Kennisbank genereren"
+            description="Data wordt omgezet naar trigger/content format per locale."
+          />
+          <PipelineStep
+            step={4}
+            title="Upload naar Blob Storage"
+            description="Alle JSON bestanden worden geupload naar Vercel Blob Storage (NL + DE apart)."
+          />
+          <PipelineStep
+            step={5}
+            title="CM Halo sync"
+            description="CM Halo haalt de kennisbank op via de individuele endpoints per taal."
+          />
+          <PipelineStep
+            step={6}
+            title="Robin synchroniseren"
+            description="Bij een handmatige crawl: ga naar Robin > Knowledge en klik op 'Sync'. Bij de dagelijkse crawl gebeurt dit automatisch."
+          />
+        </ol>
+      </div>
+    </main>
+  );
+}
+
+function LocaleSection({
+  locale,
+  flag,
+  site,
+  meta,
+  apiPrefix,
+  categoryLabels,
+}: {
+  locale: string;
+  flag: string;
+  site: string;
+  meta: KBMetadata | null;
+  apiPrefix: string;
+  categoryLabels: Record<string, string>;
+}) {
+  return (
+    <div className="mb-8">
+      <h2 className="mb-4 text-xl font-bold text-gray-800">
+        {flag} {locale} &mdash; {site}
+      </h2>
+
       {meta ? (
         <>
           {/* Stats grid */}
           {(() => {
             const e = normalizeEntries(meta.entries);
             return (
-              <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <div className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <StatCard label="Totaal entries" value={e.total} />
                 <StatCard label="Producten" value={e.producten} />
                 <StatCard label="FAQs" value={e.faqs} />
@@ -138,7 +228,7 @@ export default async function Dashboard() {
           })()}
 
           {/* Info cards */}
-          <div className="mb-8 grid gap-4 sm:grid-cols-2">
+          <div className="mb-4 grid gap-4 sm:grid-cols-2">
             <InfoCard
               label="Laatste update"
               value={formatDate(meta.lastUpdated)}
@@ -148,8 +238,8 @@ export default async function Dashboard() {
 
           {/* Per-bestand grootte */}
           {meta.files && (
-            <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6">
-              <h2 className="mb-3 text-lg font-semibold">Bestanden</h2>
+            <div className="mb-4 rounded-lg border border-gray-200 bg-white p-6">
+              <h3 className="mb-3 text-base font-semibold">Bestanden</h3>
               <div className="space-y-2 text-sm">
                 {[
                   { label: "producten.json", info: meta.files.producten },
@@ -175,8 +265,8 @@ export default async function Dashboard() {
 
           {/* Producten per categorie */}
           {meta.categoryFiles && Object.keys(meta.categoryFiles).length > 0 && (
-            <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6">
-              <h2 className="mb-3 text-lg font-semibold">Producten per categorie</h2>
+            <div className="mb-4 rounded-lg border border-gray-200 bg-white p-6">
+              <h3 className="mb-3 text-base font-semibold">Producten per categorie</h3>
               <div className="space-y-2 text-sm">
                 {Object.entries(meta.categoryFiles).map(([slug, info]) => (
                   <div
@@ -185,7 +275,7 @@ export default async function Dashboard() {
                   >
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-gray-700">
-                        {CATEGORY_LABELS[slug] ?? slug}
+                        {categoryLabels[slug] ?? slug}
                       </span>
                       <code className="text-xs text-gray-400 font-[family-name:var(--font-mono)]">
                         producten-{slug}.json
@@ -202,37 +292,36 @@ export default async function Dashboard() {
           )}
         </>
       ) : (
-        <div className="mb-8 rounded-lg border border-yellow-200 bg-yellow-50 p-6">
+        <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 p-6">
           <p className="font-medium text-yellow-800">
-            Nog geen data beschikbaar
+            Nog geen {locale} data beschikbaar
           </p>
           <p className="mt-1 text-sm text-yellow-700">
-            De eerste crawl moet nog draaien via GitHub Actions. Trigger deze
-            handmatig of wacht op het dagelijkse schema (06:00 NL).
+            De eerste crawl voor {site} moet nog draaien.
           </p>
         </div>
       )}
 
-      {/* API endpoints info */}
-      <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="mb-3 text-lg font-semibold">API Endpoints</h2>
+      {/* API endpoints */}
+      <div className="mb-4 rounded-lg border border-gray-200 bg-white p-6">
+        <h3 className="mb-3 text-base font-semibold">API Endpoints ({locale})</h3>
         <div className="space-y-2">
           {[
             {
-              endpoint: `${BASE_URL}/api/knowledge-base`,
+              endpoint: `${BASE_URL}${apiPrefix}`,
               desc: "Volledige kennisbank (alle entries)",
             },
             {
-              endpoint: `${BASE_URL}/api/knowledge-base/producten`,
-              desc: "Alle producten + onderdelen",
+              endpoint: `${BASE_URL}${apiPrefix}/producten`,
+              desc: "Alle producten",
             },
             {
-              endpoint: `${BASE_URL}/api/knowledge-base/faqs`,
-              desc: "Alleen veelgestelde vragen",
+              endpoint: `${BASE_URL}${apiPrefix}/faqs`,
+              desc: "Veelgestelde vragen",
             },
             {
-              endpoint: `${BASE_URL}/api/knowledge-base/paginas`,
-              desc: "Alleen pagina\u2019s + blogs",
+              endpoint: `${BASE_URL}${apiPrefix}/paginas`,
+              desc: "Pagina's + blogs",
             },
           ].map(({ endpoint, desc }) => (
             <div key={endpoint}>
@@ -246,13 +335,13 @@ export default async function Dashboard() {
           ))}
         </div>
 
-        <h3 className="mt-4 mb-2 text-sm font-semibold text-gray-700">Per categorie</h3>
+        <h4 className="mt-4 mb-2 text-sm font-semibold text-gray-700">Per categorie</h4>
         <div className="space-y-2">
-          {Object.entries(CATEGORY_LABELS).map(([slug, label]) => (
+          {Object.entries(categoryLabels).map(([slug, label]) => (
             <div key={slug}>
               <div className="rounded-md bg-gray-900 px-4 py-2 overflow-x-auto">
                 <code className="text-sm text-green-400 font-[family-name:var(--font-mono)]">
-                  GET {BASE_URL}/api/knowledge-base/producten/{slug}
+                  GET {BASE_URL}{apiPrefix}/producten/{slug}
                 </code>
               </div>
               <p className="mt-1 mb-3 text-xs text-gray-500">{label}</p>
@@ -272,44 +361,7 @@ export default async function Dashboard() {
           velden. Compatibel met CM Halo API Connection.
         </p>
       </div>
-
-      {/* Pipeline uitleg */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="mb-4 text-lg font-semibold">Crawl Pipeline</h2>
-        <ol className="space-y-3 text-sm text-gray-700">
-          <PipelineStep
-            step={1}
-            title="GitHub Actions"
-            description="Dagelijks om 06:00 NL start de crawler automatisch."
-          />
-          <PipelineStep
-            step={2}
-            title="Website crawlen"
-            description="Python crawler haalt alle producten, FAQs, blogs en pagina's op van exittoys.nl."
-          />
-          <PipelineStep
-            step={3}
-            title="Kennisbank genereren"
-            description="Data wordt omgezet naar trigger/content format en opgesplitst in 3 bestanden + 1 gecombineerd."
-          />
-          <PipelineStep
-            step={4}
-            title="Upload naar Blob Storage"
-            description="Alle JSON bestanden worden geupload naar Vercel Blob Storage."
-          />
-          <PipelineStep
-            step={5}
-            title="CM Halo sync"
-            description="CM Halo haalt de kennisbank op via de individuele endpoints."
-          />
-          <PipelineStep
-            step={6}
-            title="Robin synchroniseren"
-            description="Bij een handmatige crawl: ga naar Robin > Knowledge en klik op 'Sync'. Bij de dagelijkse crawl gebeurt dit automatisch."
-          />
-        </ol>
-      </div>
-    </main>
+    </div>
   );
 }
 

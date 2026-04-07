@@ -1,0 +1,133 @@
+"""Duitse locale configuratie (exittoys.de)."""
+
+from locales.base import LocaleConfig
+
+DE_CONFIG = LocaleConfig(
+    locale="de",
+    base_url="https://www.exittoys.de",
+
+    faq_index_path="/kundenservice/haufig-gestellte-fragen",
+    blog_index_path="/exit-toys/blog",
+    parts_path="/ersatzteile",
+
+    category_pages=[
+        "/trampolin",
+        "/pools",
+        "/spielgerate",
+        "/sport",
+        "/getset",
+        "/fitnessgerate",
+        "/ersatzteile",
+        # Trampolines
+        "/trampolin/exit/black-edition",
+        "/trampolin/exit/silhouette",
+        "/trampolin/exit/allure",
+        "/trampolin/exit/lotus",
+        "/trampolin/exit/elegant",
+        "/trampolin/exit/interra",
+        "/trampolin/exit/peakpro",
+        "/trampolin/exit/dynamic",
+        "/trampolin/exit/tiggy-junior",
+        "/trampolin/zubehor",
+        # Pools
+        "/pools/exit/wood",
+        "/pools/exit/stone",
+        "/pools/exit/black-leather",
+        "/pools/exit/soft-grey",
+        "/pools/exit/lime",
+        "/pools/frame-pool",
+        "/pools/pool-zubehor",
+        "/pools/whirlpools",
+        "/pools/pool-uberdachung",
+        # Spielgerate
+        "/spielgerate/spielhaus",
+        "/spielgerate/spielturm",
+        "/spielgerate/schaukel",
+        "/spielgerate/klettergerust",
+        "/spielgerate/sand-und-wasserspielzeug",
+        "/spielgerate/gartenmobel",
+        # Sport
+        "/sport/fussball",
+        "/sport/rebounder",
+        "/sport/basketball",
+        "/sport/hockey",
+        "/sport/volleyball",
+        "/sport/padel-rebounder",
+        # Fitness
+        "/fitnessgerate/getset",
+        "/fitnessgerate/outdoor-fitness-gym",
+    ],
+
+    skip_paths={
+        "/", "/suchen", "/sitemap", "/cookies", "/warenkorb",
+        "/einloggen", "/kasse",
+    },
+
+    product_categories={
+        "trampoline": ["trampolin"],
+        "pools": ["pool", "schwimmbecken", "aufstellpool", "whirlpool"],
+        "spielgerate": ["spielhaus", "spielturm", "spielgerät", "spielgerate"],
+        "sport": ["sport", "fussball", "rebounder", "basketball", "hockey", "volleyball"],
+        "getset": ["getset", "spiel- und sportgerät"],
+        "sandkasten": ["sandkasten", "sand- und wasser"],
+        "schaukel": ["schaukel"],
+        "ersatzteile": ["ersatzteil"],
+        "overig": [],
+    },
+
+    labels={
+        "weight": "Gewicht",
+        "price": "Preis",
+        "sku": "Artikelnummer",
+        "category": "Kategorie",
+        "series": "Serie",
+        "type": "Typ",
+        "type_part": "Ersatzteil",
+        "dimensions": "Abmessungen",
+        "color": "Farbe",
+        "color_spec_key": "Farbe",
+        "description": "Beschreibung",
+        "features": "Merkmale",
+        "specifications": "Spezifikationen",
+        "faq": "Häufig gestellte Fragen",
+        "q": "F",
+        "a": "A",
+        "question": "Frage",
+        "answer": "Antwort",
+        "author": "Autor",
+        "date": "Datum",
+    },
+
+    blog_categories={
+        "trampolin": "trampoline",
+        "pool": "pools",
+        "schwimmbecken": "pools",
+        "spielhaus": "spielgerate",
+        "spielturm": "spielgerate",
+        "whirlpool": "whirlpools",
+        "fussball": "sport",
+        "basketball": "sport",
+        "gokart": "gokarts",
+        "sandkasten": "sandkasten",
+        "schaukel": "schaukel",
+        "getset": "getset",
+        "fitness": "fitness",
+    },
+
+    page_keyword_map={
+        "kontakt": "EXIT Toys Kontaktdaten Kundenservice Telefon E-Mail",
+        "liefer": "Lieferung Versand Zustellung",
+        "rucksen": "Rücksendung Reklamation",
+        "garantie": "Garantie Reparatur",
+        "sicherheit": "Sicherheit Normen Prüfzeichen",
+        "beratung": "Beratung vergleichen welche wählen",
+        "pflege": "Pflege Wartung reinigen",
+        "uber-exit": "über EXIT Toys Unternehmen",
+    },
+
+    in_stock_text="Auf Lager",
+    out_of_stock_text="Nicht auf Lager",
+    written_by_prefix="Geschrieben von:",
+    job_posting_keyword="stellenangebot",
+    user_agent="ExitToysCrawler/1.0 (kennisbank; contact: info@exittoys.de)",
+)

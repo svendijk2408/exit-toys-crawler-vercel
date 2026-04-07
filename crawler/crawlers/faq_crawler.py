@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from config import BASE_URL, BATCH_SIZE, FAQ_INDEX_URL
+from config import BASE_URL, BATCH_SIZE, FAQ_INDEX_PATH, FAQ_INDEX_URL
 from crawlers.base import BaseCrawler
 from parsers.faq_parser import FAQParser
 from utils.progress import ProgressTracker
@@ -37,7 +37,7 @@ class FAQCrawler:
             for link in index_links:
                 full_url = link if link.startswith("http") else f"{BASE_URL}{link}"
                 # Alleen echte FAQ categoriepagina's
-                if "/klantenservice/veelgestelde-vragen/" in full_url:
+                if f"{FAQ_INDEX_PATH}/" in full_url:
                     all_urls.add(full_url)
             logger.info(f"FAQ index: {len(all_urls)} categoriepagina's gevonden")
 

@@ -12,6 +12,7 @@ Gebruik:
 import argparse
 import asyncio
 import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -19,7 +20,20 @@ from pathlib import Path
 # Voeg project root toe aan path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config import LOG_FORMAT, LOG_LEVEL, LOGS_DIR
+
+def _set_locale():
+    """Parse --locale vroeg zodat config.py de juiste locale laadt."""
+    for i, arg in enumerate(sys.argv):
+        if arg == "--locale" and i + 1 < len(sys.argv):
+            os.environ["CRAWLER_LOCALE"] = sys.argv[i + 1]
+            return
+    # Default: nl
+    os.environ.setdefault("CRAWLER_LOCALE", "nl")
+
+
+_set_locale()
+
+from config import LOG_FORMAT, LOG_LEVEL, LOCALE, LOGS_DIR  # noqa: E402
 from crawlers.base import BaseCrawler
 from crawlers.blog_crawler import BlogCrawler
 from crawlers.category_crawler import CategoryCrawler
@@ -207,10 +221,16 @@ def main():
         action="store_true",
         help="Volledige recrawl (wist bestaande state)",
     )
+    parser.add_argument(
+        "--locale",
+        default="nl",
+        choices=["nl", "de"],
+        help="Website locale (nl of de)",
+    )
     args = parser.parse_args()
 
     setup_logging()
-    logger.info("EXIT Toys Crawler gestart")
+    logger.info(f"EXIT Toys Crawler gestart (locale: {LOCALE})")
 
     try:
         asyncio.run(run_crawler(force=args.force))

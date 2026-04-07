@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from config import BASE_URL, BATCH_SIZE, SKIP_PATHS
+from config import BASE_URL, BATCH_SIZE, JOB_POSTING_KEYWORD, LOCALE_CONFIG, SKIP_PATHS
 from crawlers.base import BaseCrawler
 from parsers.page_parser import PageParser
 from utils.progress import ProgressTracker
@@ -19,7 +19,9 @@ class PageCrawler:
     def __init__(self, crawler: BaseCrawler, state: CrawlState):
         self.crawler = crawler
         self.state = state
-        self.parser = PageParser()
+        self.parser = PageParser(
+            skip_words=("zoeken", "search", "winkelwagen", "suchen", "warenkorb"),
+        )
 
     def filter_urls(self, sitemap_pages: list[str]) -> list[str]:
         """Filter relevante pagina-URLs uit de sitemap."""
@@ -32,11 +34,11 @@ class PageCrawler:
                 continue
 
             # Skip pagina's die eigenlijk producten of blogs zijn
-            if "/exit-toys/blog/" in path:
+            if f"{LOCALE_CONFIG.blog_index_path}/" in path:
                 continue
 
             # Skip vacatures
-            if "vacature" in path:
+            if JOB_POSTING_KEYWORD and JOB_POSTING_KEYWORD in path:
                 continue
 
             filtered.append(url)

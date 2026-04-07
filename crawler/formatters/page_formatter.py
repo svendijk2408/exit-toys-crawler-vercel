@@ -4,6 +4,9 @@
 class PageFormatter:
     """Formatteert pagina data naar kennisbank entries."""
 
+    def __init__(self, page_keyword_map: dict[str, str]):
+        self.keyword_map = page_keyword_map
+
     def format(self, page: dict) -> dict:
         """Converteer een pagina dict naar trigger/content entry."""
         title = page.get("title", "")
@@ -18,18 +21,7 @@ class PageFormatter:
         url_lower = url.lower()
         content_lower = content_text.lower()
 
-        keyword_map = {
-            "contact": "EXIT Toys contactgegevens klantenservice telefoon email",
-            "verzend": "verzending levering bezorging",
-            "retour": "retourneren terugsturen",
-            "garantie": "garantie reparatie",
-            "veiligheid": "veiligheid normen keurmerken",
-            "keuzehulp": "keuzehulp vergelijken welke kiezen",
-            "onderhoud": "onderhoud schoonmaken",
-            "over-exit": "over EXIT Toys bedrijf",
-        }
-
-        for key, words in keyword_map.items():
+        for key, words in self.keyword_map.items():
             if key in url_lower or key in content_lower:
                 trigger_parts.append(words)
                 break

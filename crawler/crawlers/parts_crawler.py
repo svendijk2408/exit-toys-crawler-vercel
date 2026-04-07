@@ -6,7 +6,7 @@ import asyncio
 import logging
 import re
 
-from config import BASE_URL, PARTS_BASE_URL
+from config import BASE_URL, LOCALE_CONFIG, PARTS_BASE_URL
 from parsers.product_parser import ProductParser
 
 logger = logging.getLogger(__name__)
@@ -17,7 +17,11 @@ class PartsCrawler:
 
     def __init__(self, state):
         self.state = state
-        self.parser = ProductParser()
+        self.parser = ProductParser(
+            in_stock_text=LOCALE_CONFIG.in_stock_text,
+            out_of_stock_text=LOCALE_CONFIG.out_of_stock_text,
+        )
+        self.parts_path = LOCALE_CONFIG.parts_path
 
     async def discover_and_crawl(self) -> list[dict]:
         """Ontdek onderdelen-URLs via Playwright en crawl ze."""
@@ -67,7 +71,7 @@ class PartsCrawler:
                     for link in filter_links:
                         try:
                             href = await link.get_attribute("href")
-                            if href and "onderdelen" in href.lower():
+                            if href and self.parts_path in href.lower():
                                 nav_url = href if href.startswith("http") else f"{BASE_URL}{href}"
                                 await page.goto(nav_url, wait_until="networkidle", timeout=15000)
                                 await asyncio.sleep(1)

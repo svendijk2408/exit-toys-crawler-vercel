@@ -13,6 +13,7 @@ from config import (
     KB_PRODUCTEN_CATEGORY_FILES,
     KNOWLEDGE_BASE_COPY,
     KNOWLEDGE_BASE_FILE,
+    LOCALE_CONFIG,
     PRODUCT_CATEGORIES,
 )
 from formatters.blog_formatter import BlogFormatter
@@ -27,10 +28,11 @@ class KnowledgeBaseGenerator:
     """Genereert de finale kennisbank JSON uit alle gecrawlde data."""
 
     def __init__(self):
-        self.product_fmt = ProductFormatter()
-        self.faq_fmt = FAQFormatter()
-        self.blog_fmt = BlogFormatter()
-        self.page_fmt = PageFormatter()
+        labels = LOCALE_CONFIG.labels
+        self.product_fmt = ProductFormatter(labels)
+        self.faq_fmt = FAQFormatter(labels)
+        self.blog_fmt = BlogFormatter(labels, LOCALE_CONFIG.blog_categories)
+        self.page_fmt = PageFormatter(LOCALE_CONFIG.page_keyword_map)
 
     def generate(self, results: dict) -> dict[str, list[dict]]:
         """Genereer kennisbank entries uit alle resultaten, gecategoriseerd.

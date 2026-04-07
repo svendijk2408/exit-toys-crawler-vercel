@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
-import { corsOptions, serveBlobFile } from "../../../_lib/blob-proxy";
+import { corsOptions, serveBlobFile } from "../../../../_lib/blob-proxy";
 
 export const runtime = "edge";
 
 const VALID_CATEGORIES = [
-  "trampolines",
-  "zwembaden",
-  "speelhuisjes",
+  "trampoline",
+  "pools",
+  "spielgerate",
   "sport",
   "getset",
-  "zandbak",
-  "schommel",
-  "onderdelen",
+  "sandkasten",
+  "schaukel",
+  "ersatzteile",
   "overig",
 ] as const;
 
@@ -30,14 +30,17 @@ export async function GET(
   if (!isValidCategory(category)) {
     return NextResponse.json(
       {
-        error: `Onbekende categorie: ${category}`,
+        error: `Unbekannte Kategorie: ${category}`,
         valid: VALID_CATEGORIES,
       },
       { status: 404 }
     );
   }
 
-  return serveBlobFile(`producten-${category}.json`, `producten-${category}`);
+  return serveBlobFile(
+    `de/producten-${category}.json`,
+    `Produkte-${category}`
+  );
 }
 
 export async function OPTIONS() {
